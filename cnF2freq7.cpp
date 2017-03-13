@@ -1718,14 +1718,18 @@ return MINFACTOR;
 //EBBA A structure for clauses to be used in maxsat evaluation.
 struct clause{
 	double weight;
-	vector<int> individuals;
+	vector<int> cInds;
 	//vector<individ*> individuals;
 
 	string toString(){
 		string s = boost::lexical_cast<std::string>(weight);
-		std::stringstream ints;
-		std::copy(individuals.begin(), individuals.end(), std::ostream_iterator<int>(ints, " "));
-		s = s + " " + ints.str();
+		//std::stringstream ints;
+		//std::copy(cInds.begin(), cInds.end(), std::ostream_iterator<int>(ints, " "));
+		for(i=0; i < cInds.size()){
+			s = s + " " +cInds[i];
+		}
+
+		//s = s + " " + ints.str();
 		return s;// note each line ends in a space
 	}
 };
@@ -3628,7 +3632,7 @@ continueloop:;
 								//Now simply construct a clause type and send it to the right marker
 								clause c;
 								c.weight = w;
-								c.individuals = claus;
+								c.cInds = claus;
 								test<< "Mark: "<< mark<< "ClausToString: "<< c.toString() << endl;//TEST
 								toulInput[mark].push_back(c); //TODO make this work! Well, this works but I don't know why makes a lot of numbers be printed
 
