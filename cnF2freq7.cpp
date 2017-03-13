@@ -1725,8 +1725,8 @@ struct clause{
 		string s = boost::lexical_cast<std::string>(weight);
 		//std::stringstream ints;
 		//std::copy(cInds.begin(), cInds.end(), std::ostream_iterator<int>(ints, " "));
-		for(i=0; i < cInds.size()){
-			s = s + " " +cInds[i];
+		for(int i=0; i < cInds.size(); i++){
+			s = s + " " +  boost::lexical_cast<std::string>(cInds[i]);
 		}
 
 		//s = s + " " + ints.str();
@@ -3585,30 +3585,30 @@ continueloop:;
 
 							if(dous[j]->pars[0]){
 									cands.push_back(dous[j]->pars[0]->n);
-									test << "Parent1: "<< dous[j]->pars[0]->n;
+									test << " Parent1: "<< dous[j]->pars[0]->n;
 									if(dous[j]->pars[0]->pars[0]){
 										cands.push_back(dous[j]->pars[0]->pars[0]->n);
-										test << "Parent1's parent1: "<< dous[j]->pars[0]->pars[0]->n;
+										test << " Parent1's parent1: "<< dous[j]->pars[0]->pars[0]->n;
 									}
 									if(dous[j]->pars[0]->pars[1]){
 										cands.push_back(dous[j]->pars[0]->pars[1]->n);
-										test << "Parent1's parent2: "<< dous[j]->pars[0]->pars[1]->n;
+										test << " Parent1's parent2: "<< dous[j]->pars[0]->pars[1]->n;
 									}
 								}
 
 							if(dous[j]->pars[1]){
 									cands.push_back(dous[j]->pars[1]->n);
-									test << "Parent2: "<< dous[j]->pars[1]->n;
+									test << " Parent2: "<< dous[j]->pars[1]->n;
 									if(dous[j]->pars[1]->pars[0]){
 										cands.push_back(dous[j]->pars[0]->pars[0]->n);
-										test << "Parent2: "<< dous[j]->pars[1]->pars[0]->n;
+										test << " Parent2: "<< dous[j]->pars[1]->pars[0]->n;
 									}
 									if(dous[j]->pars[1]->pars[1]){
 										cands.push_back(dous[j]->pars[1]->pars[1]->n);
-										test << "Parent2: "<< dous[j]->pars[1]->pars[1]->n;
+										test << " Parent2: "<< dous[j]->pars[1]->pars[1]->n;
 									}
 								}
-							test<< " End of input into cands /n ";
+							test<< " End of input into cands \n ";
 
 							//Use structure clause to store weight and values.
 							double w;
@@ -3758,6 +3758,11 @@ continueloop:;
 			}
 
 			// Run toulbar2
+			//std::string cmnd = "toulbar2 ";
+			//cmnd= cmnd+ infile + " -m=1";
+			//system(cmnd);
+			std::system("ls -l >test2.txt");
+			std::system("toulbar2 toulIn.wcnf -m=1");
 
 			//Read outfile and store best result in negshift?
 
