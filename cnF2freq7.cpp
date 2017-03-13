@@ -3618,7 +3618,7 @@ continueloop:;
 							for (int g = 0; g < NUMTURNS; g++) {
 								std::bitset<16> bits(g);
 								vector<int> claus;
-								for(int b =0; b <NUMTURNS; b++){
+								for(int b =0; b <(TYPEBITS +1); b++){
 									if(bits[b]){
 										claus.push_back(cands[b]);
 									}
@@ -3762,7 +3762,7 @@ continueloop:;
 			//cmnd= cmnd+ infile + " -m=1";
 			//system(cmnd);
 			std::system("ls -l >test2.txt");
-			std::system("toulbar2 toulIn.wcnf -m=1");
+			std::system("toulbar2 toulIn.wcnf -m=1 -w toulOut.txt");
 
 			//Read outfile and store best result in negshift?
 
