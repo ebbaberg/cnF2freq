@@ -3615,10 +3615,10 @@ continueloop:;
 							//loop over NUMTURNS
 							// get relevant weights and individuals, insert to container
 
-							for (int g = 0; g < NUMTURNS; g++) {
+							for (int g = 0; g < NUMTURNS; g++) {//SOMETHINGS FISHY! CHECK OUTPUT AND WHAT YOU WANT, RPEPETITION PROBLEM TODO
 								std::bitset<16> bits(g);
 								vector<int> claus;
-								for(int b =0; b <(TYPEBITS +1); b++){
+								for(int b =0; b <(cands.size()); b++){
 									if(bits[b]){
 										claus.push_back(cands[b]);
 									}
@@ -3732,11 +3732,13 @@ continueloop:;
 		//Print all information to seperate files EBBA
 		// stored by marker in toulIn  vector<vector<clause>>
 		//Then run toulbar and save best solution in relevant negshift vectors
-		//cout<<"We are about to enter the loop"; // problem solving
+		std::string toulin("toul_in.wcnf");
+		std::string toulout("toul_out.txt");
 		for (int m=0; m < (int) toulInput.size(); m++ ){
-			//cout<<"We have entered the loop"; // problem solving
-			std::fstream infile;
-			infile.open("toulIn.wcnf", ios::out | ios::in | ios::trunc);
+			std::fstream infile( toulin, ios::out | ios::in | ios::trunc);
+			std::fstream output( toulout, ios::out | ios::in | ios::trunc);
+			output.close();//create & close outfile
+
 			if(!infile){
 				cout<< "the infile was not opened\n" ;
 				perror("Output file failed to open because: ");
@@ -3744,16 +3746,18 @@ continueloop:;
 
 			infile << " c In Weigthed Partial Max-SAT, the parameters line is 'p wcnf nbvar nbclauses top'\n";
 			infile << " c Where p is the weight\n";
-			infile << " c nbvar is the number of a variables appearing in the file (TYPEBITS +1)\n";
+			infile << " c nbvar is the nu	mber of a variables appearing in the file (TYPEBITS +1)\n";
 			infile << " c nbclauses is the exact number of clauses contained in the file\n";
 			infile << " c see http://maxsat.ia.udl.cat/requirements/\n";
+
 			int nbvar = (int) dous.size();
 			int nbclauses = (int) toulInput[m].size();
 			cout<<"nbvar: " <<nbvar<< "\n"; // problem solving
-			//cout<<"nbclauses: " <<nbclauses<< "\n"; // problem solving
-			infile << "p wcnf " << nbvar << nbclauses << "\n";// PROBLEM HERE!;
+			cout<<"nbclauses: " <<nbclauses<< "\n"; // problem solving
+			infile << "p wcnf " << nbvar << nbclauses << "\n";
+
 			for( int g=0; g  < nbclauses ; g++){
-				infile<<toulInput[m][g].toString()<< "\n"<<"\n";
+				infile<<toulInput[m][g].toString()<< "\n";
 				//cout<<"TEST " <<toulInput[m][g].toString()<< "\n"; // problem solving
 			}
 
@@ -3761,13 +3765,25 @@ continueloop:;
 			//std::string cmnd = "toulbar2 ";
 			//cmnd= cmnd+ infile + " -m=1";
 			//system(cmnd);
-			std::system("ls -l >test2.txt");
-			std::system("toulbar2 toulIn.wcnf -m=1 -w toulOut.txt");
+			//std::fstream negfile(toulout, ios::out | ios::trunc);
+			//negfile.close();
+			//std::system("toulbar2 toulIn.wcnf -m=1 -w toulOut.txt");//TODO PROBLEM toulOut not created, don't know how to understand, check out tomorrow
 
-			//Read outfile and store best result in negshift?
+		    string str = "toulbar2 ";
+		    str = str + toulin + "-m=1 -w " + toulout;
+
+		    // Convert string to const char * as system requires
+		    // parameter of type const char *
+		    const char *command = str.c_str();
+		    system(command);
+
+		    //Read outfile and store best result in negshift
+		    //output.open();
+
 
 			//Close file
 			infile.close();
+			output.close();
 		}
 
 			//End of Ebbas code
