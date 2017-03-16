@@ -2,11 +2,11 @@ Mark: 17 Individ: 10 Parent1: 9 Parent1's parent1: 1 Parent1's parent2: 2 Parent
  Mark: 17ClausToString: 7999999999.9999933 -10 -9 -1 -2 -11 Current maxweight: 9689421338
 Mark: 17ClausToString: 7999999999.9999933 10 -9 -1 -2 -11 Current maxweight: 9689421338
 Mark: 17ClausToString: 7999999999.9999933 -10 9 -1 -2 -11 Current maxweight: 9689421338
-Mark: 17ClausToString: 0 10 9 -1 -2 -11 Current maxweight: 9689421338
+Mark: 17ClausToString: 7999999999.9999933 10 9 -1 -2 -11 Current maxweight: 9689421338
 Mark: 17ClausToString: 7999999999.9999933 -10 -9 1 -2 -11 Current maxweight: 9689421338
-Mark: 17ClausToString: 0 10 -9 1 -2 -11 Current maxweight: 9689421338
-Mark: 17ClausToString: 0 -10 9 1 -2 -11 Current maxweight: 9689421338
-Mark: 17ClausToString: 0 10 9 1 -2 -11 Current maxweight: 9689421338
+Mark: 17ClausToString: 7999999999.9999933 10 -9 1 -2 -11 Current maxweight: 9689421338
+Mark: 17ClausToString: 7999999999.9999933 -10 9 1 -2 -11 Current maxweight: 9689421338
+Mark: 17ClausToString: 7999999999.9999933 10 9 1 -2 -11 Current maxweight: 9689421338
 Mark: 17ClausToString: 0 -10 -9 -1 2 -11 Current maxweight: 9689421338
 Mark: 17ClausToString: 0 10 -9 -1 2 -11 Current maxweight: 9689421338
 Mark: 17ClausToString: 0 -10 9 -1 2 -11 Current maxweight: 9689421338

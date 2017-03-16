@@ -2842,6 +2842,9 @@ template<bool full, typename reporterclass> void doit(FILE* out, bool printalot
 			}
 		}
 	}
+	//moved two lines here EBBA
+	vector<set<negshiftcand> > negshiftcands (0);
+	negshiftcands.resize(chromstarts.size());
 
 
 	for (unsigned int i = 0; i < chromstarts.size() - 1; i++)
@@ -3533,14 +3536,6 @@ continueloop:;
 						{		
 							if (g & (flag2ignore >> 1)) continue;
 
-							int c = 0;
-							for (int p = 0; p < TYPEBITS + 1; p++)
-							{
-								if (g & (1 << p)) c++;
-							}
-
-														if (c > 1) continue;
-
 							aroundturner turn(g);
 							for (shiftflagmode = shifts; shiftflagmode < shiftend; shiftflagmode++)
 							{
@@ -3805,12 +3800,16 @@ continueloop:;
 		//Print all information to seperate files EBBA
 		// stored by marker in toulIn  vector<vector<clause>>
 		//Then run toulbar and save best solution in relevant negshift vectors
+		//Remember: typedef boost::tuple<individ*, double, int> negshiftcand;
 		std::string toulin("toul_in.wcnf");
 		std::string toulout("toul_out.txt");
-		const int nbvar = indnumbers.size();
-		for (int m=0; m < (int) toulInput.size(); m++ ){
+		int nbvar = indnumbers.size();
+		int minsumweight =  std::numeric_limits<int>::max();
+		std::set<negshiftcand> bestcands;
+		//for (int m=0; m < (int) toulInput.size(); m++ ){//TODO change so that it is valid for more than one chromosome
+		for(int m= chromstarts[i]; m < chromstarts[i+1]; m++ ){
 			std::fstream infile( toulin, ios::out | ios::in | ios::trunc);
-			//std::fstream output( toulout, ios::out | ios::in | ios::trunc);
+			std::fstream output( toulout, ios::out | ios::in | ios::trunc);
 			if(!infile){
 				perror("Toulbars input file failed to open to be written to because: ");
 			}
@@ -3822,19 +3821,19 @@ continueloop:;
 			infile << "c see http://maxsat.ia.udl.cat/requirements/\n";
 
 			int nbclauses = (int) toulInput[m].size();
-			cout<<"nbvar: " <<nbvar<< "\n"; // problem solving
-			cout<<"nbclauses: " <<nbclauses<< "\n"; // problem solving
-			infile << "p wcnf " << nbvar << " " << nbclauses<< " " <<std::numeric_limits<int>::max()<<"\n";
-			clause c;
-			//double weight;
-			infile << "1"; // make toulbars output values be sorted by size of variable adds a slight prefferment for true values
+			int nbc =nbclauses + nbvar*2;
+			//cout<<"nbvar: " <<nbvar<< "\n"; // problem solving
+			//cout<<"nbclauses: " <<nbc<< "\n"; // problem solving
+			infile << "p wcnf " << nbvar << " " << nbc<<"\n"; //" " <<std::numeric_limits<int>::max()<<"\n";
 			vector<int> inds;
-			for(auto cind: indnumbers){
-				infile <<" " <<cind;
+
+			for(auto cind: indnumbers){//add clauses to get output variables sorted by size.
+				infile <<"1 "<< cind << " 0\n";
+				infile <<"1 "<< -cind << " 0\n";
 				inds.push_back(cind);
 			}
-			infile<< " 0\n";
 
+			clause c;
 			for( int g=0; g  < nbclauses ; g++){
 				c = toulInput[m][g];
 				c.weight =(long long int) (maxweight- c.weight +1);
@@ -3843,38 +3842,15 @@ continueloop:;
 				//cout<<"TEST " <<toulInput[m][g].toString()<< "\n"; // problem solving
 			}
 			infile.close();
-			// Run toulbar2
-			//std::string cmnd = "toulbar2 ";
-			//cmnd= cmnd+ infile + " -m=1";
-			//system(cmnd);
-			//std::fstream negfile(toulout, ios::out | ios::trunc);
-			//negfile.close();
-			//std::system("toulbar2 toulIn.wcnf -m=1 -w toulOut.txt");//TODO PROBLEM toulOut not created, don't know how to understand, check out tomorrow
 
-		    //string str = "toulbar2 ";
-		    //str = str + toulin + " -m=1 -w " + toulout; //does not work
-		   // str = str + toulin + " -m=1 -w "; // does not work
 
-			string str = "toulbar2 toul_in.wcnf -m=1 -w -s"; //works as in it runs, not as in it actually does what we want
+			string str = "toulbar2 toul_in.wcnf -m=1 -w -s  > toul_out.txt"; //works as in it runs, not as in it actually does what we want
 			//string str = "toulbar2 brock200_4.clq.wcnf -m=1 -w -s";//TEST
 
 
 		    // Convert string to const char * as system requires
 		    const char *command = str.c_str();
 		    system(command);
-
-		    /*//Read outfile and store best result in negshift
-		    std::fstream touloutput( "sol", ios::in);
-		    //read from file to string of 0s and 1s
-		    string rawinput;
-			string tf;
-		    while( getline( touloutput, rawinput, ' ' ) )
-		    {
-		      tf+= rawinput;
-		    }
-
-		    std::bitset<nbvar>();
-		    */
 
 		    //Read outfile and store best result in negshift
 			std::fstream touloutput( "sol", ios::in);
@@ -3885,55 +3861,49 @@ continueloop:;
 			    tf.push_back(rawinput);
 			}
 
-			//vector containing all individuals numbers who should be shifted
-			vector<int> neg;
-			for(int g=0; g<tf.size(); g++){
-				if(tf[g]){
-					neg.push_back(inds[g]);
+			 //Read outfile and store sum of clauses not fulfuilled in sumweight
+
+			string instr;
+			int sumweight =0;
+			while (output >> instr) {
+				if(instr.compare("Optimum:")){
+					break;
 				}
 			}
+			output >> sumweight;
 
-			if(neg.size()>1){
-				cout<< "There is a place where double shifts would be good!"<< endl;//(string) neg <<
+			if(minsumweight > sumweight){
+				//vector containing all individuals numbers who should be shifted
+				minsumweight = sumweight;
+				//vector<int> neg;
+				bestcands.clear();
+				for(int g=0; g<tf.size(); g++){
+					if(tf[g]){
+						bestcands.emplace(negshiftcand(dous[inds[g]], sumweight, m));
+						//neg.push_back(inds[g]);
+					}
+				}
+
+				//if(neg.size()>1){
+					//cout<< "There is a place where double shifts would be good!"<< endl;//(string) neg <<
+				//}
 			}
 
-			//create format that negshift can read.
-			//eg right now: we are running over markes.
-			//need to compare between markers to pick place on chromosome, and choose that neg vector
-			// How do we get an appropriate weight?
-			// individuals to change contained in vector neg.
-			//Is the weight important? In that case we ned to get it from somewhere...
-			//marker =
-			/*
-			int qstart = -1000 - chromstarts[i];
-							int qend = -1000 - chromstarts[i + 1];
-							int qd = -1;
-							q+=qd* we ahve access to i, so we know which chromosome we're at
-
-							so: marker = qstart + qd*m = -1000 - chromstarts[i] -m ?
-							*/
-
-
-			/*
-
-		i.e., the minimum number of unsatisfied clauses by the current solution for Max-SAT or the minimum sum of weights of unsatisfied clauses for Weighted Max-SAT.
-			 How to store a tupel: http://www.cplusplus.com/reference/tuple/tuple/
-
-
-
-			 */
-
-			/*
-			 * Or simply used a pair of key, vector type?
-Store in something that sorts by size of key  and have marker as the first or last index of vector.
-			 */
 
 			//Close file
 			touloutput.close();
 			//output.close();
 		}
-		//should toulbar actually run hear?*confused*
 
+		//Data structure to fill: vector<set<negshiftcand> > negshiftcands (0);
+			if(bestcands.size()== 1){
+				cout << "Only one individual at a time!"<< endl;
+			}
+			else if(bestcands.size()>1){
+				cout<< "A conjunction!"<< bestcands.size()<< "individuals are changing!"<< endl; //For Ebbas degree projects results
+			}
+			negshiftcands.push_back(bestcands);
+			bestcands.clear(); // uneccesary, just for clarity
 			//End of Ebbas code
 
 				for (unsigned int j = 0; j < outqueue.size(); j++)
@@ -4009,9 +3979,9 @@ Store in something that sorts by size of key  and have marker as the first or la
 
 		if (!full && HAPLOTYPING)
 		{
-			vector<set<negshiftcand> > negshiftcands;
-			negshiftcands.resize(chromstarts.size());
-//populate here EBBA
+		///	vector<set<negshiftcand> > negshiftcands;
+			//negshiftcands.resize(chromstarts.size());
+//Moved these EBBA
 			for (unsigned int i = 0; i < 1000000; i++)
 			{
 				individ* ind = getind(i);
