@@ -80,6 +80,7 @@ float templgeno[8] = {-1, -0.5,
 #include <bitset> //EBBA
 #include <iostream>
 #include <fstream>
+#include <limits>
 
 using namespace std; // use functions that are part of the standard library
 
@@ -2862,7 +2863,7 @@ template<bool full, typename reporterclass> void doit(FILE* out, bool printalot
 		//EBBA also: Here starts the parallels, investigate names
 		vector<vector<clause>> toulInput;
 		std::set<int> indnumbers;// to count individuals
-		int maxweight = 0; //could be done prettier
+		long long int maxweight = 0;
 
 
 #pragma omp parallel for schedule(dynamic,1)
@@ -3586,88 +3587,6 @@ continueloop:;
 	// The weight is the sum of rawvals (?)
 	// The current individual is dous[j]
 	// structure of container: vector<vector<clause*>> toulInput;
-/*#pragma omp critical(negshifts)
-						{
-							//Markers stored in q (see line 2844 in original cnF2freq)
-							//such that
-							int mark = -q - 1000;
-							int numbind = 1;
-
-							//Do we have parents and grand parents?
-							//Store their identifying numbers in an array.
-							//Hard coded for max 3 gens.
-							std::fstream test ("test2.txt", ios::out | ios::in | ios::trunc);//TEST//TEST
-							vector<int> cands(7);
-							cands[0]=dous[j]->n;
-
-							test << "Mark: "<< mark<<" Individ: "<< dous[j]->n;
-
-							if(dous[j]->pars[0]){
-									cands[1]= dous[j]->pars[0]->n;
-									test << " Parent1: "<< dous[j]->pars[0]->n;
-									numbind++;//TEST
-									if(dous[j]->pars[0]->pars[0]){
-										cands[2]= dous[j]->pars[0]->pars[0]->n;
-										test << " Parent1's parent1: "<< dous[j]->pars[0]->pars[0]->n;
-										numbind++;//TEST
-									}
-									if(dous[j]->pars[0]->pars[1]){
-										cands[3]= dous[j]->pars[0]->pars[1]->n;
-										test << " Parent1's parent2: "<< dous[j]->pars[0]->pars[1]->n;
-										numbind++;//TEST
-									}
-								}
-
-							if(dous[j]->pars[1]){
-									cands[4]= dous[j]->pars[1]->n;
-									test << " Parent2: "<< dous[j]->pars[1]->n;
-									numbind++;//TEST
-									if(dous[j]->pars[1]->pars[0]){
-										cands[5]= dous[j]->pars[0]->pars[0]->n;
-										test << " Parent2: "<< dous[j]->pars[1]->pars[0]->n;
-										numbind++;//TEST
-									}
-									if(dous[j]->pars[1]->pars[1]){
-										cands[6]= dous[j]->pars[1]->pars[1]->n;
-										test << " Parent2: "<< dous[j]->pars[1]->pars[1]->n;
-										numbind++;//TEST
-									}
-								}
-							test<<"Number of individuals:  "<< numbind << " End of input into cands \n ";
-
-							//Use structure clause to store weight and values.
-							double w;
-							//loop over NUMTURNS
-							// get relevant weights and individuals, insert to container
-
-							//for (int g = 0; g < NUMTURNS; g++) {
-							for (int g = 0; g < exp2(numbind); g++) {
-								std::bitset<16> bits(g);
-								vector<int> claus;
-								for(int b =0; b < 7; b++){
-									if(cands[b]){
-										indnumbers.insert(cands[b]);
-										if(bits[b]){
-											claus.push_back(cands[b]);
-										}
-										else{
-											claus.push_back(-cands[b]);
-										}
-									}
-								}
-								for (int s = 0; s < NUMSHIFTS; s++){
-									w += rawvals[g][s];
-								}
-								//Now simply construct a clause type and send it to the right marker
-								clause c;
-								c.weight = w;
-								c.cinds = claus;
-								test<< "Mark: "<< mark<< "ClausToString: "<< c.toString() << endl;//TEST
-								toulInput[mark].push_back(c); //TODO make this work! Well, this works but I don't know why makes a lot of numbers be printed
-
-							}
-
-						}*/
 
 #pragma omp critical(negshifts)
 						{
@@ -3754,7 +3673,7 @@ continueloop:;
 							test<<"Number of individuals:  "<< numbind << " End of input into cands \n ";//remember, incesters only counted once
 
 							//Use structure clause to store weight and values.
-							double w;
+
 							//loop over NUMTURNS
 							// get relevant weights and individuals, insert to container
 
@@ -3777,20 +3696,21 @@ continueloop:;
 										//}
 									}
 								}
-
+								double w = 0;
 								for (int s = 0; s < NUMSHIFTS; s++){
 									w += rawvals[g][s];
 								}
 								//Now simply construct a clause type and send it to the right marker
 								clause c;
+								w = w * 1000000000;
 								c.weight = w;
-								maxweight += w;
+								if (w > maxweight){
+									maxweight = w;
+								}
 								c.cinds = claus;
-								test<< "Mark: "<< mark<< "ClausToString: "<< c.toString() << endl;//TEST
-								toulInput[mark].push_back(c); //TODO make this work! Well, this works but I don't know why makes a lot of numbers be printed
-
+								test<< "Mark: "<< mark<< "ClausToString: "<< c.toString() <<  " Current maxweight: " << maxweight<< endl;//TEST
+								toulInput[mark].push_back(c);
 							}
-
 						}
 					}					
 
@@ -3887,10 +3807,10 @@ continueloop:;
 		//Then run toulbar and save best solution in relevant negshift vectors
 		std::string toulin("toul_in.wcnf");
 		std::string toulout("toul_out.txt");
-		int nbvar = (int) indnumbers.size();
+		const int nbvar = indnumbers.size();
 		for (int m=0; m < (int) toulInput.size(); m++ ){
 			std::fstream infile( toulin, ios::out | ios::in | ios::trunc);
-			std::fstream output( toulout, ios::out | ios::in | ios::trunc);
+			//std::fstream output( toulout, ios::out | ios::in | ios::trunc);
 			if(!infile){
 				perror("Toulbars input file failed to open to be written to because: ");
 			}
@@ -3904,12 +3824,20 @@ continueloop:;
 			int nbclauses = (int) toulInput[m].size();
 			cout<<"nbvar: " <<nbvar<< "\n"; // problem solving
 			cout<<"nbclauses: " <<nbclauses<< "\n"; // problem solving
-			infile << "p wcnf " << nbvar << " " << nbclauses<< " " << (int)  (maxweight + 1)<<	"\n";
+			infile << "p wcnf " << nbvar << " " << nbclauses<< " " <<std::numeric_limits<int>::max()<<"\n";
 			clause c;
 			//double weight;
+			infile << "1"; // make toulbars output values be sorted by size of variable adds a slight prefferment for true values
+			vector<int> inds;
+			for(auto cind: indnumbers){
+				infile <<" " <<cind;
+				inds.push_back(cind);
+			}
+			infile<< " 0\n";
+
 			for( int g=0; g  < nbclauses ; g++){
 				c = toulInput[m][g];
-				c.weight = (int) (maxweight - c.weight);
+				c.weight =(long long int) (maxweight- c.weight +1);
 				infile<< c.weighttostring()<< c.clausetostring() << " 0\n";
 				//infile<< toulInput[m][g].toString() << "\n";
 				//cout<<"TEST " <<toulInput[m][g].toString()<< "\n"; // problem solving
@@ -3924,8 +3852,8 @@ continueloop:;
 			//std::system("toulbar2 toulIn.wcnf -m=1 -w toulOut.txt");//TODO PROBLEM toulOut not created, don't know how to understand, check out tomorrow
 
 		    //string str = "toulbar2 ";
-		    //str = str + toulin + "-m=1 -w " + toulout; //does not work
-		    //str = str + toulin + "-m=1 -w ";
+		    //str = str + toulin + " -m=1 -w " + toulout; //does not work
+		   // str = str + toulin + " -m=1 -w "; // does not work
 
 			string str = "toulbar2 toul_in.wcnf -m=1 -w -s"; //works as in it runs, not as in it actually does what we want
 			//string str = "toulbar2 brock200_4.clq.wcnf -m=1 -w -s";//TEST
@@ -3935,13 +3863,76 @@ continueloop:;
 		    const char *command = str.c_str();
 		    system(command);
 
-		    //Read outfile and store best result in negshift
+		    /*//Read outfile and store best result in negshift
 		    std::fstream touloutput( "sol", ios::in);
+		    //read from file to string of 0s and 1s
+		    string rawinput;
+			string tf;
+		    while( getline( touloutput, rawinput, ' ' ) )
+		    {
+		      tf+= rawinput;
+		    }
+
+		    std::bitset<nbvar>();
+		    */
+
+		    //Read outfile and store best result in negshift
+			std::fstream touloutput( "sol", ios::in);
+			//read from file to string of 0s and 1s
+			int rawinput;
+			vector<int> tf;
+			while (touloutput >> rawinput) {
+			    tf.push_back(rawinput);
+			}
+
+			//vector containing all individuals numbers who should be shifted
+			vector<int> neg;
+			for(int g=0; g<tf.size(); g++){
+				if(tf[g]){
+					neg.push_back(inds[g]);
+				}
+			}
+
+			if(neg.size()>1){
+				cout<< "There is a place where double shifts would be good!"<< endl;//(string) neg <<
+			}
+
+			//create format that negshift can read.
+			//eg right now: we are running over markes.
+			//need to compare between markers to pick place on chromosome, and choose that neg vector
+			// How do we get an appropriate weight?
+			// individuals to change contained in vector neg.
+			//Is the weight important? In that case we ned to get it from somewhere...
+			//marker =
+			/*
+			int qstart = -1000 - chromstarts[i];
+							int qend = -1000 - chromstarts[i + 1];
+							int qd = -1;
+							q+=qd* we ahve access to i, so we know which chromosome we're at
+
+							so: marker = qstart + qd*m = -1000 - chromstarts[i] -m ?
+							*/
+
+
+			/*
+
+		i.e., the minimum number of unsatisfied clauses by the current solution for Max-SAT or the minimum sum of weights of unsatisfied clauses for Weighted Max-SAT.
+			 How to store a tupel: http://www.cplusplus.com/reference/tuple/tuple/
+
+
+
+			 */
+
+			/*
+			 * Or simply used a pair of key, vector type?
+Store in something that sorts by size of key  and have marker as the first or last index of vector.
+			 */
 
 			//Close file
-
-			output.close();
+			touloutput.close();
+			//output.close();
 		}
+		//should toulbar actually run hear?*confused*
 
 			//End of Ebbas code
 
@@ -4020,7 +4011,7 @@ continueloop:;
 		{
 			vector<set<negshiftcand> > negshiftcands;
 			negshiftcands.resize(chromstarts.size());
-
+//populate here EBBA
 			for (unsigned int i = 0; i < 1000000; i++)
 			{
 				individ* ind = getind(i);
@@ -4053,67 +4044,7 @@ continueloop:;
 				if (world.rank()) continue;
 #endif	      	      		 
 
-				if (/*ind->pars[0] || ind->pars[1] || */!ind->haplocount.size()) continue;		  
-
-				// Perform the inversions indicated by the negshift data, at most a single one per individual
-				// and chromosome, maybe 0.
-				for (int c = 0; c < (int) chromstarts.size() - 1; c++)
-				{
-					int minstart = chromstarts[c + 1];
-					double minval = -1e-5;
-					bool prevlow = false;
-
-					for (int p = chromstarts[c]; p < (int) chromstarts[c + 1]; p++)
-					{
-						if (ind->negshift[p] < minval)
-						{
-							minstart = p;
-							minval = ind->negshift[p];
-						}
-						if (ind->negshift[p] < -1e-5)
-						{
-							if (!prevlow)
-							{
-								//						fprintf(stdout, "prevlow: %d %d %lf\n", ind->n, p, ind->negshift[p]);
-								negshiftcand ourtuple(ind, 0, p);
-								negshiftcands[c].insert(ourtuple);
-							}
-							prevlow = true;
-						}
-						else
-							prevlow = false;
-					}
-					if (ind->lastinved[c] == minstart)
-					{
-						ind->lastinved[c] = -1;
-						//continue;
-					}
-
-					ind->lastinved[c] = -1;
-
-					if (minstart + 1 < chromstarts[c + 1])
-					{
-						negshiftcand ourtuple(ind, minval, minstart);
-						inferiorrelated pred(ourtuple);
-						for (set<negshiftcand>::iterator iter = negshiftcands[c].begin(); iter != negshiftcands[c].end(); )
-						{
-							if (pred(*iter))
-							{
-								negshiftcands[c].erase(iter++);
-							}
-							else
-							{
-								iter++;
-							}
-
-						}
-						if (!pred.anymatch)
-						{
-							negshiftcands[c].insert(ourtuple);
-						}
-					}
-
-				}
+				if (/*ind->pars[0] || ind->pars[1] || */!ind->haplocount.size()) continue;
 			}
 
 #ifdef F2MPI
