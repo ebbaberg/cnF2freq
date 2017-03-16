@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # This script will compile cnF2freq using the Intel compiler (recommended, recent GCC is good, but Intel auto-vectorization is nice for performance)
-g++-6 -O2 cnF2freq7.cpp -ffast-math  -o cnF2freq7 -fopenmp -I boost_1_57_0 -g
+g++-6 -O2 cnF2freq8.cpp -ffast-math  -o cnF2freq8 -fopenmp -I boost_1_57_0 -g
 #icc -openmp -openmp-linkstatic -fast -ftz cnF2freq.cpp -o cnF2freq
 
 
@@ -32,4 +32,4 @@ g++-6 -O2 cnF2freq7.cpp -ffast-math  -o cnF2freq7 -fopenmp -I boost_1_57_0 -g
 # g++ puts a lot of thread private storage on the stack
 # This is large enough for at least some use cases. The defaults on some implementations will be too low.
 export OMP_STACK_SIZE=256M
-./cnF2freq7 demoplantimpute.map demoplantimpute.ped demoplantimpute.gen demooutput 10
+./cnF2freq8 demoplantimpute.map demoplantimpute.ped demoplantimpute.gen demooutput 10

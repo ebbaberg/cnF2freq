@@ -1718,20 +1718,36 @@ return MINFACTOR;
 //EBBA A structure for clauses to be used in maxsat evaluation.
 struct clause{
 	double weight;
-	vector<int> cInds;
+	vector<int> cinds;
 	//vector<individ*> individuals;
 
-	string toString(){
+		string toString(){
 		string s = boost::lexical_cast<std::string>(weight);
 		//std::stringstream ints;
 		//std::copy(cInds.begin(), cInds.end(), std::ostream_iterator<int>(ints, " "));
-		for(int i=0; i < cInds.size(); i++){
-			s = s + " " +  boost::lexical_cast<std::string>(cInds[i]);
+		for(int i=0; i < cinds.size(); i++){
+			if(cinds[i]){
+				s = s + " " +  boost::lexical_cast<std::string>(cinds[i]);
+			}
 		}
-
 		//s = s + " " + ints.str();
 		return s;// note each line ends in a space
 	}
+
+	clausetostring(){
+		string s = "";
+		for(int i=0; i < cinds.size(); i++){
+			if(cinds[i]){
+				s = s + " " +  boost::lexical_cast<std::string>(cinds[i]);
+			}
+		}
+		return s;
+	}
+
+	weighttostring(){
+		return boost::lexical_cast<std::string>(weight);
+	}
+
 };
 
 template<bool update, bool zeropropagate, int genwidth> individ::recursetrackpossible<update, zeropropagate, genwidth>::operator double()
@@ -2845,6 +2861,8 @@ template<bool full, typename reporterclass> void doit(FILE* out, bool printalot
 		//contains a referense to a vector containing all the clauses for said marker
 		//EBBA also: Here starts the parallels, investigate names
 		vector<vector<clause>> toulInput;
+		std::set<int> indnumbers;// to count individuals
+		int maxweight = 0; //could be done prettier
 
 
 #pragma omp parallel for schedule(dynamic,1)
@@ -2877,7 +2895,6 @@ template<bool full, typename reporterclass> void doit(FILE* out, bool printalot
 				int qd = -1;
 				int f2s = 0;
 				int f2end = NUMPATHS;
-				//TODO: create sizes for the vectors!
 				toulInput.resize(qstart - qend); //EBBA
 
 				if (!HAPLOTYPING)
@@ -3569,61 +3586,73 @@ continueloop:;
 	// The weight is the sum of rawvals (?)
 	// The current individual is dous[j]
 	// structure of container: vector<vector<clause*>> toulInput;
-#pragma omp critical(negshifts)
+/*#pragma omp critical(negshifts)
 						{
 							//Markers stored in q (see line 2844 in original cnF2freq)
 							//such that
 							int mark = -q - 1000;
+							int numbind = 1;
 
 							//Do we have parents and grand parents?
-							//Store their identifying numbers in a vector.
+							//Store their identifying numbers in an array.
 							//Hard coded for max 3 gens.
 							std::fstream test ("test2.txt", ios::out | ios::in | ios::trunc);//TEST//TEST
-							vector<int> cands;
-							cands.push_back(dous[j]->n);
+							vector<int> cands(7);
+							cands[0]=dous[j]->n;
+
 							test << "Mark: "<< mark<<" Individ: "<< dous[j]->n;
 
 							if(dous[j]->pars[0]){
-									cands.push_back(dous[j]->pars[0]->n);
+									cands[1]= dous[j]->pars[0]->n;
 									test << " Parent1: "<< dous[j]->pars[0]->n;
+									numbind++;//TEST
 									if(dous[j]->pars[0]->pars[0]){
-										cands.push_back(dous[j]->pars[0]->pars[0]->n);
+										cands[2]= dous[j]->pars[0]->pars[0]->n;
 										test << " Parent1's parent1: "<< dous[j]->pars[0]->pars[0]->n;
+										numbind++;//TEST
 									}
 									if(dous[j]->pars[0]->pars[1]){
-										cands.push_back(dous[j]->pars[0]->pars[1]->n);
+										cands[3]= dous[j]->pars[0]->pars[1]->n;
 										test << " Parent1's parent2: "<< dous[j]->pars[0]->pars[1]->n;
+										numbind++;//TEST
 									}
 								}
 
 							if(dous[j]->pars[1]){
-									cands.push_back(dous[j]->pars[1]->n);
+									cands[4]= dous[j]->pars[1]->n;
 									test << " Parent2: "<< dous[j]->pars[1]->n;
+									numbind++;//TEST
 									if(dous[j]->pars[1]->pars[0]){
-										cands.push_back(dous[j]->pars[0]->pars[0]->n);
+										cands[5]= dous[j]->pars[0]->pars[0]->n;
 										test << " Parent2: "<< dous[j]->pars[1]->pars[0]->n;
+										numbind++;//TEST
 									}
 									if(dous[j]->pars[1]->pars[1]){
-										cands.push_back(dous[j]->pars[1]->pars[1]->n);
+										cands[6]= dous[j]->pars[1]->pars[1]->n;
 										test << " Parent2: "<< dous[j]->pars[1]->pars[1]->n;
+										numbind++;//TEST
 									}
 								}
-							test<< " End of input into cands \n ";
+							test<<"Number of individuals:  "<< numbind << " End of input into cands \n ";
 
 							//Use structure clause to store weight and values.
 							double w;
 							//loop over NUMTURNS
 							// get relevant weights and individuals, insert to container
 
-							for (int g = 0; g < NUMTURNS; g++) {//SOMETHINGS FISHY! CHECK OUTPUT AND WHAT YOU WANT, RPEPETITION PROBLEM TODO
+							//for (int g = 0; g < NUMTURNS; g++) {
+							for (int g = 0; g < exp2(numbind); g++) {
 								std::bitset<16> bits(g);
 								vector<int> claus;
-								for(int b =0; b <(cands.size()); b++){
-									if(bits[b]){
-										claus.push_back(cands[b]);
-									}
-									else{
-										claus.push_back(-cands[b]);
+								for(int b =0; b < 7; b++){
+									if(cands[b]){
+										indnumbers.insert(cands[b]);
+										if(bits[b]){
+											claus.push_back(cands[b]);
+										}
+										else{
+											claus.push_back(-cands[b]);
+										}
 									}
 								}
 								for (int s = 0; s < NUMSHIFTS; s++){
@@ -3632,7 +3661,100 @@ continueloop:;
 								//Now simply construct a clause type and send it to the right marker
 								clause c;
 								c.weight = w;
-								c.cInds = claus;
+								c.cinds = claus;
+								test<< "Mark: "<< mark<< "ClausToString: "<< c.toString() << endl;//TEST
+								toulInput[mark].push_back(c); //TODO make this work! Well, this works but I don't know why makes a lot of numbers be printed
+
+							}
+
+						}*/
+
+#pragma omp critical(negshifts)
+						{
+							//Markers stored in q (see line 2844 in original cnF2freq)
+							//such that
+							int mark = -q - 1000;
+							int numbind = 1;
+
+							//Do we have parents and grand parents?
+							//Store their identifying numbers in an array.
+							//Hard coded for max 3 gens.
+							std::fstream test ("test2.txt", ios::out | ios::in | ios::trunc);//TEST//TEST
+							vector<int> cands(7);
+							vector<bool> exists(7,false);
+							cands[0]=dous[j]->n;
+							exists[numbind-1]= true;
+
+							test << "Mark: "<< mark<<" Individ: "<< dous[j]->n;
+
+							if(dous[j]->pars[0]){
+									cands[1]= dous[j]->pars[0]->n;
+									test << " Parent1: "<< dous[j]->pars[0]->n;
+									numbind++;
+									exists[numbind-1]= true;
+									if(dous[j]->pars[0]->pars[0]){
+										cands[2]= dous[j]->pars[0]->pars[0]->n;
+										test << " Parent1's parent1: "<< dous[j]->pars[0]->pars[0]->n;
+										numbind++;
+										exists[numbind-1]= true;
+									}
+									if(dous[j]->pars[0]->pars[1]){
+										cands[3]= dous[j]->pars[0]->pars[1]->n;
+										test << " Parent1's parent2: "<< dous[j]->pars[0]->pars[1]->n;
+										numbind++;
+										exists[numbind-1]= true;
+									}
+								}
+
+							if(dous[j]->pars[1]){
+									cands[4]= dous[j]->pars[1]->n;
+									test << " Parent2: "<< dous[j]->pars[1]->n;
+									numbind++;
+									exists[numbind-1]= true;
+									if(dous[j]->pars[1]->pars[0]){
+										cands[5]= dous[j]->pars[0]->pars[0]->n;
+										test << " Parent2: "<< dous[j]->pars[1]->pars[0]->n;
+										numbind++;
+										exists[numbind-1]= true;
+									}
+									if(dous[j]->pars[1]->pars[1]){
+										cands[6]= dous[j]->pars[1]->pars[1]->n;
+										test << " Parent2: "<< dous[j]->pars[1]->pars[1]->n;
+										numbind++;
+										exists[numbind-1]= true;
+									}
+								}
+							test<<"Number of individuals:  "<< numbind << " End of input into cands \n ";
+
+							//Use structure clause to store weight and values.
+							double w;
+							//loop over NUMTURNS
+							// get relevant weights and individuals, insert to container
+
+							//for (int g = 0; g < NUMTURNS; g++) {
+							for (int g = 0; g < exp2(numbind); g++) {
+								std::bitset<16> bits(g);
+								vector<int> claus;
+								for(int b =0; b < 7; b++){
+									if(exists[b]){
+										indnumbers.insert(cands[b]);
+										if(bits[b]){
+											claus.push_back(cands[b]);
+										}
+										else{
+											claus.push_back(-cands[b]);
+										}
+									}
+								}
+
+								for (int s = 0; s < NUMSHIFTS; s++){
+									w += rawvals[g][s];
+								}
+								//Now simply construct a clause type and send it to the right marker
+								clause c;
+								c.weight = w;
+								maxweight += w;
+								c.cinds = claus;
 								test<< "Mark: "<< mark<< "ClausToString: "<< c.toString() << endl;//TEST
 								toulInput[mark].push_back(c); //TODO make this work! Well, this works but I don't know why makes a lot of numbers be printed
 
@@ -3734,33 +3856,34 @@ continueloop:;
 		//Then run toulbar and save best solution in relevant negshift vectors
 		std::string toulin("toul_in.wcnf");
 		std::string toulout("toul_out.txt");
+		int nbvar = (int) indnumbers.size();
 		for (int m=0; m < (int) toulInput.size(); m++ ){
 			std::fstream infile( toulin, ios::out | ios::in | ios::trunc);
 			std::fstream output( toulout, ios::out | ios::in | ios::trunc);
-			output.close();//create & close outfile
-
 			if(!infile){
-				cout<< "the infile was not opened\n" ;
-				perror("Output file failed to open because: ");
+				perror("Toulbars input file failed to open to be written to because: ");
 			}
 
-			infile << " c In Weigthed Partial Max-SAT, the parameters line is 'p wcnf nbvar nbclauses top'\n";
-			infile << " c Where p is the weight\n";
-			infile << " c nbvar is the nu	mber of a variables appearing in the file (TYPEBITS +1)\n";
-			infile << " c nbclauses is the exact number of clauses contained in the file\n";
-			infile << " c see http://maxsat.ia.udl.cat/requirements/\n";
+			infile << "c In Weigthed Partial Max-SAT, the parameters line is 'p wcnf nbvar nbclauses top'\n";
+			infile << "c Where p is the weight\n";
+			infile << "c nbvar is the nu	mber of a variables appearing in the file (TYPEBITS +1)\n";
+			infile << "c nbclauses is the exact number of clauses contained in the file\n";
+			infile << "c see http://maxsat.ia.udl.cat/requirements/\n";
 
-			int nbvar = (int) dous.size();
 			int nbclauses = (int) toulInput[m].size();
 			cout<<"nbvar: " <<nbvar<< "\n"; // problem solving
 			cout<<"nbclauses: " <<nbclauses<< "\n"; // problem solving
-			infile << "p wcnf " << nbvar << nbclauses << "\n";
-
+			infile << "p wcnf " << nbvar << " " << nbclauses<< " " << (int)  (maxweight + 1)<<	"\n";
+			clause c;
+			double weight;
 			for( int g=0; g  < nbclauses ; g++){
-				infile<<toulInput[m][g].toString()<< "\n";
+				c = toulInput[m][g];
+				c.weight = (int) (maxweight - c.weight);
+				infile<< c.toString() << "\n";
+				//infile<< toulInput[m][g].toString() << "\n";
 				//cout<<"TEST " <<toulInput[m][g].toString()<< "\n"; // problem solving
 			}
-
+			infile.close();
 			// Run toulbar2
 			//std::string cmnd = "toulbar2 ";
 			//cmnd= cmnd+ infile + " -m=1";
@@ -3769,20 +3892,23 @@ continueloop:;
 			//negfile.close();
 			//std::system("toulbar2 toulIn.wcnf -m=1 -w toulOut.txt");//TODO PROBLEM toulOut not created, don't know how to understand, check out tomorrow
 
-		    string str = "toulbar2 ";
-		    str = str + toulin + "-m=1 -w " + toulout;
+		    //string str = "toulbar2 ";
+		    //str = str + toulin + "-m=1 -w " + toulout; //does not work
+		    //str = str + toulin + "-m=1 -w ";
+
+			string str = "toulbar2 toul_in.wcnf -m=1 -w -s"; //works as in it runs, not as in it actually does what we want
+			//string str = "toulbar2 brock200_4.clq.wcnf -m=1 -w -s";//TEST
+
 
 		    // Convert string to const char * as system requires
-		    // parameter of type const char *
 		    const char *command = str.c_str();
 		    system(command);
 
 		    //Read outfile and store best result in negshift
-		    //output.open();
-
+		    std::fstream touloutput( "sol", ios::in);
 
 			//Close file
-			infile.close();
+
 			output.close();
 		}
 
