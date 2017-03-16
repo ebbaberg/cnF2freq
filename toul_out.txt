@@ -5,13 +5,13 @@ c Read 11 variables, with 2 values at most, and 214 clauses, with maximum arity 
 Cost function decomposition time : 0 seconds.
 Preprocessing time: 0 seconds.
 11 unassigned variables, 22 values in all current domains (med. size:2, max size:2) and 192 non-unary cost functions (med. degree:4)
-Initial lower and upper bounds: [11,1668368897100[ 100%
-New solution: 54136528045 (0 backtracks, 2 nodes, depth 3)
+Initial lower and upper bounds: [11,1358875505100[ 100%
+New solution: 44464859545 (0 backtracks, 2 nodes, depth 3)
  0 0 0 0 0 0 0 0 0 0 0
-Optimality gap: [ 46136528045 , 54136528045 ] 14.7775 % (3 backtracks, 7 nodes)
-New solution: 46136528045 (3 backtracks, 9 nodes, depth 1)
+Optimality gap: [ 36464859545 , 44464859545 ] 17.9917 % (3 backtracks, 7 nodes)
+New solution: 36464859545 (3 backtracks, 9 nodes, depth 1)
  0 1 0 0 0 0 0 0 0 0 1
-Optimality gap: [ 46136528045 , 46136528045 ] 0 % (3 backtracks, 9 nodes)
+Optimality gap: [ 36464859545 , 36464859545 ] 0 % (3 backtracks, 9 nodes)
 Node redundancy during HBFS: 33.3333 %
-Optimum: 46136528045 in 3 backtracks and 9 nodes ( 0 removals by DEE) and 0 seconds.
+Optimum: 36464859545 in 3 backtracks and 9 nodes ( 0 removals by DEE) and 0 seconds.
 end.

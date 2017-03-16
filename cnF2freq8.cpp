@@ -3897,10 +3897,10 @@ continueloop:;
 
 		//Data structure to fill: vector<set<negshiftcand> > negshiftcands (0);
 			if(bestcands.size()== 1){
-				cout << "Only one individual at a time!"<< endl;
+				cout << "Only one individual is switching!"<< endl;
 			}
 			else if(bestcands.size()>1){
-				cout<< "A conjunction!"<< bestcands.size()<< "individuals are changing!"<< endl; //For Ebbas degree projects results
+				cout<< "A switch!"<< bestcands.size()<< "individuals are changing!"<< endl; //For Ebbas degree projects results
 			}
 			negshiftcands.push_back(bestcands);
 			bestcands.clear(); // uneccesary, just for clarity
